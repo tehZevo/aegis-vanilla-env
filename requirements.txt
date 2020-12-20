@@ -1,0 +1,5 @@
+numpy
+gym
+box2d-py
+git+https://github.com/tehzevo/protopost-python#egg=protopost
+git+https://github.com/tehzevo/nd-to-json#egg=nd_to_json
