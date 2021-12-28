@@ -1,32 +1,30 @@
 import argparse
 import logging
-from datetime import datetime
 import os
+import importlib
 
 import numpy as np
 import gym
 
 from protopost import ProtoPost
-from protopost import protopost_client as ppcl
-
 from nd_to_json import nd_to_json, json_to_nd
 
-import logging
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
-
-REWARD_URL = os.getenv("REWARD_URL")
-EPISODE_REWARD_URL = os.getenv("EPISODE_REWARD_URL", None)
-ACTION_URL = os.getenv("ACTION_URL")
-PORT = os.getenv("PORT", 80)
-ENV_NAME = os.getenv("ENV_NAME")
-
-observation = None
+PORT = int(os.getenv("PORT", 80))
+ENV_NAME = os.getenv("ENV_NAME", "LunarLanderContinuous-v2")
+#reward to give on episode end (since we can't detect DONEs)
+EPISODE_REWARD = float(os.getenv("EPISODE_REWARD"), 0)
 
 #create env
-env = gym.make(ENV_NAME)
-observation = env.reset()
-episode_reward = 0
+#import
+if ENV_NAME.find(" ") != -1:
+  ENV_NAME = ENV_NAME.split(" ")
+  env = getattr(importlib.import_module(ENV_NAME[0]), ENV_NAME[1])
+  env = env()
+else:
+  env = gym.make(ENV_NAME)
+print(env)
+
+obs = env.reset()
 
 is_discrete = isinstance(env.action_space, gym.spaces.Discrete)
 
@@ -34,32 +32,28 @@ print("Observation space:", env.observation_space)
 print("Action space:", env.action_space)
 
 def step(data):
-    global observation, episode_reward
-    #get action
-    action = json_to_nd(ppcl(ACTION_URL))
-    if is_discrete:
-        action = int(action)
+  global obs
+  #get action
+  action = json_to_nd(data)
+  if is_discrete:
+    action = int(action)
 
-    #step environment
-    obs, reward, done, info = env.step(action)
-    episode_reward += reward
-    if done:
-        obs = env.reset()
-        if EPISODE_REWARD_URL is not None:
-            ppcl(EPISODE_REWARD_URL, episode_reward)
-        episode_reward = 0
-    observation = obs
+  #step environment
+  obs, reward, done, info = env.step(action)
+  done = bool(done)
+  if done:
+    obs = env.reset()
+    reward += EPISODE_REWARD
 
-    #send reward
-    #ppcl(REWARD_URL, nd_to_json(reward))
-    ppcl(REWARD_URL, reward)
+  #TODO: fix info (recursively check that each value is json serializable)
+  return {"obs":img, "done":done, "reward":reward, "info":{}}
 
 def get_observation(data):
-    return nd_to_json(observation)
+  return nd_to_json(obs)
 
 routes = {
-    "step": step,
-    "observation": get_observation
+  "": step,
+  "obs": get_observation
 }
 
 ProtoPost(routes).start(PORT)
