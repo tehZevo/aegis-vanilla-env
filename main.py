@@ -12,7 +12,7 @@ from nd_to_json import nd_to_json, json_to_nd
 PORT = int(os.getenv("PORT", 80))
 ENV_NAME = os.getenv("ENV_NAME", "LunarLanderContinuous-v2")
 #reward to give on episode end (since we can't detect DONEs)
-EPISODE_REWARD = float(os.getenv("EPISODE_REWARD"), 0)
+EPISODE_REWARD = float(os.getenv("EPISODE_REWARD", 0))
 
 #create env
 #import
