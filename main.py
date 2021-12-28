@@ -41,12 +41,13 @@ def step(data):
   #step environment
   obs, reward, done, info = env.step(action)
   done = bool(done)
+  reward = float(reward)
   if done:
     obs = env.reset()
     reward += EPISODE_REWARD
 
   #TODO: fix info (recursively check that each value is json serializable)
-  return {"obs":img, "done":done, "reward":reward, "info":{}}
+  return {"obs":nd_to_json(obs), "done":done, "reward":reward, "info":{}}
 
 def get_observation(data):
   return nd_to_json(obs)
