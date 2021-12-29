@@ -13,3 +13,4 @@ Runs Box2D and other OpenAI Gym environments as Aegis nodes
 - support and document method for importing custom environments
 - add route for resetting
 - add route to return observation and action space types and shapes
+- support saving videos using monitor
